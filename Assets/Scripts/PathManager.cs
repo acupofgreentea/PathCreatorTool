@@ -12,12 +12,25 @@ public class PathManager : MonoBehaviour
 
     [SerializeField] private List<Transform> pathPoints;
 
+    public List<Transform> PathPoints
+    {
+        get => pathPoints;
+
+        set => pathPoints = value;
+    }
+
     [ContextMenu("Generate Path")]
     public void GeneratePath()
     {
         if (pathPoints.Count == 0)
         {
             Debug.LogError("Path points is empty!");
+            return;
+        }
+
+        if (pathPoints.Count == 1)
+        {
+            Debug.LogError("Need more path points to draw.");
             return;
         }
 
@@ -31,6 +44,11 @@ public class PathManager : MonoBehaviour
         };
         
         pathCreator.bezierPath = bezierPath;
+    }
+
+    public void ClearPath()
+    {
+        pathCreator.EditorData.ResetBezierPath(Vector3.zero, false);
     }
 
     [ContextMenu("Fill Path Points")]
