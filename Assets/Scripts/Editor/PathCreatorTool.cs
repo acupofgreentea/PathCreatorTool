@@ -13,18 +13,14 @@ public class PathCreatorTool : EditorWindow
 
     public List<Transform> PathPoints = new();
     private SerializedProperty pathPointsProp;
-    private SerializedProperty isInsertProp;
-    private SerializedProperty increaseInstertIndex;
     private Transform parent;
     private SerializedObject serializedObject;
     private PathCreatorController pathCreatorController;
     private int insertIndex;
-    public bool IsInsert;
-    public bool IncreaseInsertIndex;
 
     private PathManager pathManager;
     public GameObject TemplateBase;
-    
+
     private void OnEnable()
     {
         serializedObject ??= new SerializedObject(this);
@@ -32,21 +28,18 @@ public class PathCreatorTool : EditorWindow
         pathCreatorController ??= new PathCreatorController(pathManager, parent, PathPoints);
 
         pathPointsProp = serializedObject.FindProperty("PathPoints");
-        isInsertProp = serializedObject.FindProperty("IsInsert");
-        increaseInstertIndex = serializedObject.FindProperty("IncreaseInsertIndex");
-        SceneView.duringSceneGui += SceneGUI; 
-        
+        SceneView.duringSceneGui += SceneGUI;
     }
 
     private void CreateTemplateBase()
     {
         if (TemplateBase != null)
             return;
-        
+
         GameObject template = new("Template");
         GameObject cubesParent = new("CubesParent");
         GameObject path = new("Path");
-        
+
         path.AddComponent<PathCreator>();
         pathManager = path.AddComponent<PathManager>();
 
@@ -67,45 +60,39 @@ public class PathCreatorTool : EditorWindow
     {
         serializedObject.Update();
         
-        GUILayout.Space(15);
-        
         GUIStyle centeredStyle = GUI.skin.GetStyle("Label");
         centeredStyle.alignment = TextAnchor.UpperCenter;
-        
-        GUILayout.Label("Press 'P' to Create Cube.", centeredStyle);
-        
-        GUILayout.Space(15);
-        
-        EditorGUILayout.PropertyField(pathPointsProp);
-        
+
         GUILayout.Space(15);
 
+        GUILayout.Label("Press 'P' to Create Cube.", centeredStyle);
+        GUILayout.Space(15);
+
+        GUILayout.Label("Press 'I' to Insert Cube.", centeredStyle);
+
+        GUILayout.Space(15);
+        
         parent = (Transform)EditorGUILayout.ObjectField("Parent", parent, typeof(Transform), true);
         
         GUILayout.Space(15);
 
-        EditorGUILayout.PropertyField(isInsertProp);
+        EditorGUILayout.PropertyField(pathPointsProp);
         
-        if(IsInsert)
-        {
-            GUILayout.Space(15);
-            GUILayout.Label("Press 'I' to Insert Cube.", centeredStyle);
-            EditorGUILayout.PropertyField(increaseInstertIndex);
-            insertIndex = EditorGUILayout.IntField("Insert Index", insertIndex);
-        }
-        
+
+        insertIndex = EditorGUILayout.IntField("Insert Index", insertIndex);
+
         GUILayout.FlexibleSpace();
 
         if (GUILayout.Button("Reverse"))
         {
-            Reverse();    
+            Reverse();
         }
-        
+
         if (GUILayout.Button("Draw Path"))
         {
             pathCreatorController.DrawPath();
         }
-        
+
         if (GUILayout.Button("Clear"))
         {
             Clear();
@@ -117,15 +104,15 @@ public class PathCreatorTool : EditorWindow
 
             foreach (Transform transform in cubes)
             {
-                if(transform == parent)
+                if (transform == parent)
                     continue;
-                
+
                 DestroyImmediate(transform.gameObject);
             }
-            
+
             Clear();
         }
-        
+
         Repaint();
         serializedObject.ApplyModifiedProperties();
     }
@@ -139,20 +126,20 @@ public class PathCreatorTool : EditorWindow
     private void SceneGUI(SceneView sceneView)
     {
         Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-        
-        if(Event.current.type == EventType.KeyDown && Event.current.character == 'p')
+
+        if (Event.current.type == EventType.KeyDown && Event.current.character == 'p')
         {
             pathCreatorController.AddCube(ray);
         }
-        
-        if(Event.current.type == EventType.KeyDown && Event.current.character is 'i' or 'ı')
+
+        if (Event.current.type == EventType.KeyDown && Event.current.character is 'i' or 'ı')
         {
             pathCreatorController.InsertCube(ray, insertIndex);
         }
-        
+
         Repaint();
     }
-    
+
     private void Reverse()
     {
         pathCreatorController.Reverse();
