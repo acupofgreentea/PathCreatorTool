@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using PathCreation;
 using UnityEditor;
@@ -12,7 +11,7 @@ public class PathCreatorTool : EditorWindow
         GetWindow<PathCreatorTool>(false, "Path Creator");
     }
 
-    public List<Transform> PathPoints;
+    public List<Transform> PathPoints = new();
     private SerializedProperty pathPointsProp;
     private SerializedProperty isInsertProp;
     private SerializedProperty increaseInstertIndex;
@@ -29,14 +28,14 @@ public class PathCreatorTool : EditorWindow
     private void OnEnable()
     {
         serializedObject ??= new SerializedObject(this);
-        pathCreatorController ??= new PathCreatorController();
+        CreateTemplateBase();
+        pathCreatorController ??= new PathCreatorController(pathManager, parent, PathPoints);
 
         pathPointsProp = serializedObject.FindProperty("PathPoints");
         isInsertProp = serializedObject.FindProperty("IsInsert");
         increaseInstertIndex = serializedObject.FindProperty("IncreaseInsertIndex");
         SceneView.duringSceneGui += SceneGUI; 
         
-        CreateTemplateBase();
     }
 
     private void CreateTemplateBase()
@@ -104,7 +103,7 @@ public class PathCreatorTool : EditorWindow
         
         if (GUILayout.Button("Draw Path"))
         {
-            DrawPath();
+            pathCreatorController.DrawPath();
         }
         
         if (GUILayout.Button("Clear"))
@@ -134,88 +133,30 @@ public class PathCreatorTool : EditorWindow
     private void Clear()
     {
         insertIndex = 0;
-        PathPoints.Clear();
-        pathManager.ClearPath();
+        pathCreatorController.Clear();
     }
 
     private void SceneGUI(SceneView sceneView)
     {
+        Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+        
         if(Event.current.type == EventType.KeyDown && Event.current.character == 'p')
         {
-           SpawnCube();
+            pathCreatorController.AddCube(ray);
         }
         
-        if(Event.current.type == EventType.KeyDown && (Event.current.character == 'i' || Event.current.character == 'ı'))
+        if(Event.current.type == EventType.KeyDown && Event.current.character is 'i' or 'ı')
         {
-            InsertCube(insertIndex);
+            pathCreatorController.InsertCube(ray, insertIndex);
         }
-        
         
         Repaint();
     }
     
     private void Reverse()
     {
-        if (PathPoints.Count == 0)
-            return;
-        
-        PathPoints.Reverse();
-        
-        DrawPath();
+        pathCreatorController.Reverse();
 
         serializedObject.ApplyModifiedProperties();
-    }
-    
-    private void DrawPath()
-    {
-        pathManager.PathPoints = PathPoints;
-        pathManager.GeneratePath();
-    }
-
-    private void InsertCube(int index)
-    {
-        Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-            
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
-        {
-            GameObject cube = pathCreatorController.SpawnPathPoint();
-
-            cube.transform.position = hit.point;
-            cube.transform.parent = parent;
-            PathPoints.Insert(index, cube.transform);
-        }
-
-        insertIndex = PathPoints.Count;
-        DrawPath();
-        ReOrderCubes();
-    }
-
-    private void ReOrderCubes()
-    {
-        for (var i = 0; i < PathPoints.Count; i++)
-        {
-            PathPoints[i].transform.SetSiblingIndex(i);
-            
-            PathPoints[i].gameObject.name = "Cube" + "_" + i;
-        }
-    }
-    
-    private void SpawnCube()
-    {
-        Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-            
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity))
-        {
-            GameObject cube = pathCreatorController.SpawnPathPoint();
-
-            cube.gameObject.name = "Cube" + "_" + PathPoints.Count;
-            cube.transform.position = hit.point;
-            cube.transform.parent = parent;
-            PathPoints.Add(cube.transform);
-        }
-
-        insertIndex = PathPoints.Count;
-        
-        DrawPath();
     }
 }
